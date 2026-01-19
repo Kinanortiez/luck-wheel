@@ -1,17 +1,23 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-  <meta name="google-site-verification" content="49UybodNMz6njDc8qs7Xrh6QfvXnw0ScyJBZGprhVtg" />
+    <meta name="google-site-verification" content="49UybodNMz6njDc8qs7Xrh6QfvXnw0ScyJBZGprhVtg" />
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     
-    <title>عجلة الإقصاء - النسخة الاحترافية</title>
-    <meta name="description" content="عجلة حظ تفاعلية للمسابقات بنظام الإقصاء">
-    
+    <title>عجلة الحظ - لعبة الإقصاء والمسابقات التفاعلية</title>
+    <meta name="description" content="أفضل موقع عربي لعمل قرعة عشوائية وعجلة حظ تفاعلية للمسابقات بنظام الإقصاء. سهل الاستخدام، سريع، ومجاني تماماً.">
+    <meta name="keywords" content="عجلة الحظ, قرعة عشوائية, لعبة الإقصاء, مسابقات, اختيار أسماء عشوائي, تدوير العجلة">
+    <meta name="author" content="Kinanortiez">
+
+    <meta name="google-site-verification" content="googleb58f888cb260f4a" />
+
+    <link rel="icon" href="https://cdn-icons-png.flaticon.com/512/3112/3112946.png" type="image/png">
+
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     
     <style>
-        /* --- التنسيق العام --- */
+        /* --- الأساسيات والتنسيق العام --- */
         * { box-sizing: border-box; }
         body { 
             font-family: 'Segoe UI', Tahoma, sans-serif; 
@@ -31,14 +37,13 @@
             width: 100%; max-width: 380px; background: #16213e; 
             padding: 15px; border-radius: 15px; margin-bottom: 10px;
             box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            z-index: 5;
         }
-
         .input-group { display: flex; gap: 5px; }
         input { 
             flex: 1; padding: 12px; border: none; border-radius: 8px; 
             background: #0f3460; color: white; font-size: 16px; 
         }
-
         #itemsList { 
             list-style: none; padding: 0; max-height: 80px; 
             overflow-y: auto; margin: 10px 0; border-radius: 8px;
@@ -49,7 +54,7 @@
         }
 
         /* --- العجلة --- */
-        .wheel-container { position: relative; margin: 10px 0; }
+        .wheel-container { position: relative; margin: 10px 0; z-index: 1; }
         .arrow { 
             position: absolute; top: -10px; left: 50%; transform: translateX(-50%); 
             width: 0; height: 0; border-left: 15px solid transparent; 
@@ -68,7 +73,6 @@
             align-items: center; justify-content: center;
             background: rgba(0,0,0,0.8); 
         }
-        
         .modal-content { 
             background: #16213e; padding: 30px; border-radius: 20px; 
             text-align: center; width: 85%; max-width: 320px; 
@@ -77,32 +81,21 @@
             transition: all 0.3s ease;
         }
 
-        /* --- حركات الاحتفال النهائي --- */
+        /* حركات الفائز النهائي */
         .final-celebration .modal-content {
             border: 3px solid #ffd700;
             background: #2a0815;
-            /* حركة نبض المربع */
             animation: pulse-box 2s infinite ease-in-out;
         }
-
-        #winnerName { 
-            font-size: 2.5rem; color: #fff; margin: 15px 0; 
-        }
-
+        #winnerName { font-size: 2.5rem; color: #fff; margin: 15px 0; }
         .final-celebration #winnerName {
             color: #ffd700;
             text-shadow: 0 0 15px rgba(255, 215, 0, 0.7);
-            /* حركة نبض الاسم */
             animation: pulse-text 1.5s infinite ease-in-out;
         }
-
-        .trophy { 
-            display: none; font-size: 5rem; margin-bottom: 10px;
-        }
-
+        .trophy { display: none; font-size: 5rem; margin-bottom: 10px; }
         .final-celebration .trophy { 
             display: block; 
-            /* حركة قفز الكأس الخفيفة */
             animation: bounce-trophy 2s infinite ease-in-out;
         }
 
@@ -114,24 +107,21 @@
         }
         .keep-btn { background: #0f3460; color: white; border: 1px solid #e94560; flex: 1; }
         .exclude-btn { background: #e94560; color: white; flex: 1; }
-        #spinBtn { width: 100%; height: 50px; background: #e94560; color: white; margin-top: 5px; font-size: 1.1rem; }
+        #spinBtn { width: 100%; height: 50px; background: #e94560; color: white; margin-top: 5px; font-size: 1.1rem; border-radius: 10px; }
 
-        /* --- تعريفات الحركات (Animations) --- */
+        /* --- تعريف الحركات (Animations) --- */
         @keyframes pulse-box {
             0%, 100% { transform: scale(1); box-shadow: 0 0 20px rgba(255, 215, 0, 0.3); }
             50% { transform: scale(1.05); box-shadow: 0 0 50px rgba(255, 215, 0, 0.6); }
         }
-
         @keyframes pulse-text {
             0%, 100% { transform: scale(1); }
             50% { transform: scale(1.1); text-shadow: 0 0 30px #ffd700; }
         }
-
         @keyframes bounce-trophy {
             0%, 100% { transform: translateY(0); }
             50% { transform: translateY(-20px); }
         }
-
     </style>
 </head>
 <body>
@@ -139,7 +129,7 @@
     <div class="controls">
         <div class="input-group">
             <input type="text" id="nameInput" placeholder="أدخل اسماً...">
-            <button onclick="addItem()" style="background:#e94560; color:white;">إضافة</button>
+            <button onclick="addItem()" style="background:#e94560; color:white; border-radius:8px;">إضافة</button>
         </div>
         <ul id="itemsList"></ul>
         <button id="spinBtn" onclick="spinWheel()">تدوير العجلة</button>
@@ -185,7 +175,8 @@
             items.forEach((item, i) => {
                 const segAngle = angle + i * arc;
                 ctx.beginPath();
-                ctx.fillStyle = i % 2 === 0 ? "#e94560" : "#03dac6";
+                // --- التعديل الجديد لألوان متعددة ---
+                ctx.fillStyle = `hsl(${(i * 360) / num}, 70%, 50%)`;
                 ctx.moveTo(200, 200);
                 ctx.arc(200, 200, 190, segAngle, segAngle + arc);
                 ctx.fill();
@@ -252,10 +243,9 @@
                 document.getElementById('actionButtons').style.display = "none";
                 document.getElementById('finalCloseBtn').style.display = "block";
                 cheerSound.play();
-                launchCentralConfetti(); // إطلاق القصاصات من المركز
+                launchCentralConfetti();
             } else {
                 modal.classList.remove('final-celebration');
-                document.getElementById('modalTitle').style.display = "block";
                 document.getElementById('actionButtons').style.display = "flex";
                 document.getElementById('finalCloseBtn').style.display = "none";
             }
@@ -263,7 +253,6 @@
         }
 
         function launchCentralConfetti() {
-            // إطلاق من المركز لملء الشاشة تماماً
             confetti({
                 particleCount: 150,
                 spread: 70,
