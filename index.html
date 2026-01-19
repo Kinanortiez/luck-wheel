@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    
+    <title>عجلة الحظ - لعبة الإقصاء والمسابقات</title>
+    <meta name="description" content="أفضل موقع عربي لعمل قرعة عشوائية وعجلة حظ تفاعلية للمسابقات بنظام الإقصاء.">
+    <meta name="keywords" content="عجلة الحظ, قرعة عشوائية, لعبة الإقصاء, مسابقات, اختيار أسماء">
+    <meta name="author" content="Kinanortiez">
+
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    
+    <style>
+        * { box-sizing: border-box; }
+        body { 
+            font-family: 'Segoe UI', sans-serif; background: #1a1a2e; color: white; 
+            display: flex; flex-direction: column; align-items: center; 
+            margin: 0; padding: 10px; min-height: 100vh; overflow: hidden;
+        }
+
+        /* أدوات التحكم */
+        .controls { width: 100%; max-width: 380px; background: #16213e; padding: 15px; border-radius: 15px; margin-bottom: 10px; z-index: 5; }
+        .input-group { display: flex; gap: 5px; }
+        input { flex: 1; padding: 12px; border: none; border-radius: 8px; background: #0f3460; color: white; font-size: 16px; }
+        button { padding: 10px 15px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; }
+        #itemsList { list-style: none; padding: 0; max-height: 70px; overflow-y: auto; margin: 10px 0; }
+        #itemsList li { background: rgba(255,255,255,0.05); margin: 3px 0; padding: 10px; border-radius: 5px; display: flex; justify-content: space-between; }
+
+        /* العجلة */
+        .wheel-container { position: relative; margin: 10px 0; }
+        .arrow { position: absolute; top: -10px; left: 50%; transform: translateX(-50%); width: 0; height: 0; border-left: 15px solid transparent; border-right: 15px solid transparent; border-top: 30px solid #e94560; z-index: 10; }
+        canvas { max-width: 80vw; max-height: 80vw; border-radius: 50%; border: 5px solid #16213e; }
+
+        /* النافذة المنبثقة */
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 9999; align-items: center; justify-content: center; background: rgba(0,0,0,0.85); }
+        .modal-content { 
+            background: #16213e; padding: 30px; border-radius: 20px; text-align: center; 
+            width: 85%; max-width: 320px; border: 2px solid #e94560;
+        }
+        #winnerName { font-size: 2.5rem; color: #fff; margin: 15px 0; }
+        .modal-btns { display: flex; gap: 10px; margin-top: 25px; }
+        .keep-btn { background: #0f3460; color: white; border: 1px solid #e94560; flex: 1; }
+        .exclude-btn { background: #e94560; color: white; flex: 1; }
+        #spinBtn { width: 100%; height: 50px; background: #e94560; color: white; border-radius: 10px; font-weight: bold; }
+
+        /* الاحتفال النهائي */
+        .final-celebration .modal-content { 
+            border-color: #ffd700; background: #2a0815;
+            animation: pulseBox 2s infinite ease-in-out; /* نبض المربع */
+        }
+        .final-celebration #winnerName { 
+            color: #ffd700; font-size: 3.2rem;
+            animation: pulseText 1.5s infinite ease-in-out; /* نبض الاسم */
+        }
+        .trophy { display: none; font-size: 5rem; margin-bottom: 10px; }
+        .final-celebration .trophy { 
+            display: block; 
+            animation: bounceTrophy 2s infinite ease-in-out; /* اهتزاز الكأس */
+        }
+
+        /* تعريف الحركات */
+        @keyframes pulseBox { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
+        @keyframes pulseText { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.1); text-shadow: 0 0 20px #ffd700; } }
+        @keyframes bounceTrophy { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-20px); } }
+    </style>
+</head>
+<body>
+
+    <div class="controls">
+        <div class="input-group">
+            <input type="text" id="nameInput" placeholder="أدخل اسماً...">
+            <button onclick="addItem()" style="background:#e94560; color:white;">إضافة</button>
+        </div>
+        <ul id="itemsList"></ul>
+        <button id="spinBtn" onclick="spinWheel()">تدوير العجلة</button>
+    </div>
+
+    <div class="wheel-container">
+        <div class="arrow"></div>
+        <canvas id="wheelCanvas" width="400" height="400"></canvas>
+    </div>
+
+    <div id="resultModal" class="modal">
+        <div class="modal-content">
+            <div class="trophy">🏆</div>
+            <h3 id="modalTitle" style="color: #888; margin: 0;">الاسم المختار</h3>
+            <h2 id="winnerName"></h2>
+            <div id="actionButtons" class="modal-btns">
+                <button class="keep-btn" onclick="closeModal()">احتفاظ</button>
+                <button class="exclude-btn" onclick="excludeItem()">إقصاء</button>
+            </div>
+            <button id="finalCloseBtn" style="display:none; width: 100%; background: #ffd700; color: #1a1a2e; margin-top: 15px;" onclick="resetToWinnerOnly()">لعبة جديدة (مع الفائز)</button>
+        </div>
+    </div>
+
+    <audio id="tickSound" src="https://www.soundjay.com/buttons/sounds/button-16.mp3"></audio>
+    <audio id="cheerSound" src="https://www.soundjay.com/human/sounds/applause-01.mp3"></audio>
+
+    <script>
+        const canvas = document.getElementById('wheelCanvas');
+        const ctx = canvas.getContext('2d');
+        const tickSound = document.getElementById('tickSound');
+        const cheerSound = document.getElementById('cheerSound');
+        const modal = document.getElementById('resultModal');
+
+        let items = ["ياسين", "عامر"];
+        let angle = 0, velocity = 0, isSpinning = false, lastTickAngle = 0;
+        let selectedIndex = -1;
+
+        function drawWheel() {
+            const num = items.length;
+            if (num === 0) { ctx.clearRect(0,0,400,400); return; }
+            const arc = (2 * Math.PI) / num;
+            ctx.clearRect(0, 0, 400, 400);
+            items.forEach((item, i) => {
+                const segAngle = angle + i * arc;
+                ctx.beginPath();
+                ctx.fillStyle = i % 2 === 0 ? "#e94560" : "#03dac6";
+                ctx.moveTo(200, 200); ctx.arc(200, 200, 190, segAngle, segAngle + arc); ctx.fill();
+                ctx.save(); ctx.translate(200, 200); ctx.rotate(segAngle + arc / 2);
+                ctx.textAlign = "right"; ctx.fillStyle = "white"; ctx.font = "bold 18px Arial";
+                ctx.fillText(item, 175, 10); ctx.restore();
+            });
+        }
+
+        function addItem() {
+            const input = document.getElementById('nameInput');
+            if (input.value.trim()) { items.push(input.value.trim()); input.value = ""; updateList(); drawWheel(); }
+        }
+
+        function updateList() {
+            document.getElementById('itemsList').innerHTML = items.map((it, i) => 
+                `<li>${it} <span onclick="items.splice(${i},1);updateList();drawWheel()">❌</span></li>`).join('');
+        }
+
+        function spinWheel() {
+            if (isSpinning || items.length <= 1) return;
+            velocity = 0.7 + Math.random() * 0.5; isSpinning = true; animate();
+        }
+
+        function animate() {
+            if (velocity > 0.005) {
+                angle += velocity; velocity *= 0.985;
+                if (Math.abs(angle - lastTickAngle) > (Math.PI * 2 / items.length) / 2) {
+                    tickSound.currentTime = 0; tickSound.play().catch(()=>{}); lastTickAngle = angle;
+                }
+                drawWheel(); requestAnimationFrame(animate);
+            } else { isSpinning = false; showResult(); }
+        }
+
+        function showResult() {
+            const num = items.length;
+            const arc = (2 * Math.PI) / num;
+            const arrowPos = 1.5 * Math.PI;
+            const normalizedAngle = (arrowPos - angle) % (2 * Math.PI);
+            const finalAngle = normalizedAngle < 0 ? normalizedAngle + (2 * Math.PI) : normalizedAngle;
+            selectedIndex = Math.floor(finalAngle / arc) % num;
+            document.getElementById('winnerName').innerText = items[selectedIndex];
+
+            if (items.length === 1) {
+                modal.classList.add('final-celebration');
+                document.getElementById('modalTitle').style.display = "none";
+                document.getElementById('actionButtons').style.display = "none";
+                document.getElementById('finalCloseBtn').style.display = "block";
+                cheerSound.play();
+                // انفجار مركزي يملأ الشاشة تماماً
+                confetti({ particleCount: 150, spread: 80, origin: { x: 0.5, y: 0.5 }, zIndex: 10000 });
+            } else {
+                modal.classList.remove('final-celebration');
+                document.getElementById('modalTitle').style.display = "block";
+                document.getElementById('actionButtons').style.display = "flex";
+                document.getElementById('finalCloseBtn').style.display = "none";
+            }
+            modal.style.display = "flex";
+        }
+
+        function excludeItem() { 
+            items.splice(selectedIndex, 1); updateList(); drawWheel(); closeModal(); 
+            if (items.length === 1) showResult(); 
+        }
+
+        function resetToWinnerOnly() { items = [items[selectedIndex]]; updateList(); drawWheel(); closeModal(); }
+        function closeModal() { modal.style.display = "none"; }
+        updateList(); drawWheel();
+    </script>
+</body>
+</html>
